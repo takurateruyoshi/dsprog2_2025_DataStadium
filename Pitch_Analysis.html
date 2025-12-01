@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ストライクゾーン分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .stage {
+            display: none;
+        }
+
+        .stage.active {
+            display: block;
+        }
+
+        /* Stage 1: 球種選択 */
+        .pitch-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .pitch-button {
+            padding: 15px 10px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .pitch-button:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Stage 2: ヒートマップ */
+        .heatmap-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 80px);
+            grid-template-rows: repeat(5, 80px);
+            gap: 2px;
+            background: #333;
+            padding: 2px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .zone-cell {
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .zone-cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .zone-cell .rate {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .zone-cell .label {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* Stage 3: 球速別グラフ */
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        .chart-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            border-left: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 20px;
+            position: relative;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 80px;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+            position: relative;
+            min-height: 5px;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.02);
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .bar-label {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        /* ナビゲーションボタン */
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .nav-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-button.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-button.primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .nav-button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .current-selection {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .current-selection strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚾ ストライクゾーン分析ツール</h1>
+
+        <!-- Stage 1: 球種選択 -->
+        <div id="stage1" class="stage active">
+            <h2 style="text-align: center; color: #666; margin-bottom: 20px;">分析する球種を選択してください</h2>
+            <div class="pitch-selector" id="pitchSelector"></div>
+        </div>
+
+        <!-- Stage 2: 被打率ヒートマップ -->
+        <div id="stage2" class="stage">
+            <div class="current-selection">
+                選択中の球種: <strong id="selectedPitch"></strong>
+            </div>
+            <div class="heatmap-container">
+                <h2 style="color: #666; margin-bottom: 10px;">コース別被打率</h2>
+                <div class="zone-grid" id="zoneGrid"></div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4444;"></div>
+                        <span>高被打率(0.400~)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffaa44;"></div>
+                        <span>中被打率(0.250~0.399)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #44ff44;"></div>
+                        <span>低被打率(~0.249)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-button secondary" onclick="goToStage(1)">← 戻る</button>
+            </div>
+        </div>
+
+        <!-- Stage 3: 球速別打数グラフ -->
+        <div id="stage3" class="stage">
+            <div class="current-selection">
+                選択中: <strong id="selectedPitchZone"></strong>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2 style="color: #666;">球速別打数分布</h2>
+                    <p style="color: #999; font-size: 14px;">各球速帯で打たれた回数</p>
+                </div>
+                <div class="bar-chart" id="barChart"></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-button secondary" onclick="goToStage(2)">← コース選択に戻る</button>
+                <button class="nav-button primary" onclick="goToStage(1)">球種選択に戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // データ設定エリア - ここに分析結果を渡す
+        // ============================================
+        
+        const analysisData = {
+            // 球種リスト
+            pitchTypes: [
+                'ストレート', 'スライダー', 'カーブ', 'フォーク', 'カットボール', 
+                'チェンジアップ', 'スプリット', 'ワンシーム', 'ツーシーム', '縦スライダー',
+                'シュート', 'ナックルカーブ', 'パワーカーブ', 'スローカーブ', 'シンカー',
+                'パーム', '高速スライダー', 'スクリュー', 'スラーブ', 'スローボール', 'ナックル'
+            ],
+            
+            // デフォルトデータ生成関数
+            generateDefaultData: function() {
+                const defaultData = {};
+                
+                this.pitchTypes.forEach(pitchType => {
+                    // 各球種のデフォルト被打率を生成（中心ほど高く、端ほど低い傾向）
+                    const battingAverage = [];
+                    for (let row = 0; row < 5; row++) {
+                        battingAverage[row] = [];
+                        for (let col = 0; col < 5; col++) {
+                            // 中心(2,2)からの距離で被打率を決定
+                            const centerDistance = Math.abs(row - 2) + Math.abs(col - 2);
+                            const baseRate = 0.400 - (centerDistance * 0.040);
+                            const randomVariation = (Math.random() - 0.5) * 0.050;
+                            battingAverage[row][col] = Math.max(0.100, Math.min(0.450, baseRate + randomVariation));
+                        }
+                    }
+                    
+                    // 球速帯を球種ごとに設定
+                    let speedRanges;
+                    if (['ストレート', 'ツーシーム', 'ワンシーム', 'カットボール'].includes(pitchType)) {
+                        speedRanges = ['130-139', '140-149', '150-159', '160+'];
+                    } else if (['高速スライダー', 'スプリット'].includes(pitchType)) {
+                        speedRanges = ['130-139', '140-149', '150-159'];
+                    } else if (['スライダー', 'シュート', '縦スライダー', 'シンカー'].includes(pitchType)) {
+                        speedRanges = ['120-129', '130-139', '140-149'];
+                    } else if (['フォーク', 'チェンジアップ', 'パーム'].includes(pitchType)) {
+                        speedRanges = ['120-129', '130-139', '140-149'];
+                    } else if (['スローカーブ', 'スローボール', 'ナックル'].includes(pitchType)) {
+                        speedRanges = ['90-99', '100-109', '110-119'];
+                    } else {
+                        speedRanges = ['100-109', '110-119', '120-129', '130-139'];
+                    }
+                    
+                    // 25ゾーンの球速別データを生成
+                    const velocityData = [];
+                    for (let i = 0; i < 25; i++) {
+                        const hits = speedRanges.map(() => Math.floor(Math.random() * 15) + 3);
+                        velocityData.push({
+                            speeds: speedRanges,
+                            hits: hits
+                        });
+                    }
+                    
+                    defaultData[pitchType] = {
+                        battingAverage: battingAverage,
+                        velocityData: velocityData
+                    };
+                });
+                
+                return defaultData;
+            },
+            
+            // データを初期化
+            data: null
+        };
+        
+        // データを生成
+        analysisData.data = analysisData.generateDefaultData();
+
+        // ============================================
+        // アプリケーションロジック
+        // ============================================
+
+        let currentStage = 1;
+        let selectedPitch = null;
+        let selectedZone = null;
+
+        // 初期化
+        function init() {
+            renderPitchSelector();
+        }
+
+        // Stage 1: 球種選択UI
+        function renderPitchSelector() {
+            const container = document.getElementById('pitchSelector');
+            container.innerHTML = '';
+            
+            analysisData.pitchTypes.forEach(pitch => {
+                const button = document.createElement('button');
+                button.className = 'pitch-button';
+                button.textContent = pitch;
+                button.onclick = () => selectPitch(pitch);
+                container.appendChild(button);
+            });
+        }
+
+        function selectPitch(pitch) {
+            selectedPitch = pitch;
+            document.getElementById('selectedPitch').textContent = pitch;
+            goToStage(2);
+            renderHeatmap();
+        }
+
+        // Stage 2: ヒートマップ
+        function renderHeatmap() {
+            const container = document.getElementById('zoneGrid');
+            container.innerHTML = '';
+            
+            const data = analysisData.data[selectedPitch];
+            if (!data || !data.battingAverage) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+                return;
+            }
+            
+            const zoneLabels = ['高外', '高中外', '高中', '高中内', '高内',
+                              '外', '中外', '真ん中', '中内', '内',
+                              '低外', '低中外', '低中', '低中内', '低内',
+                              '低外低', '低中外低', '低中低', '低中内低', '低内低',
+                              '外低', '中外低', '中低', '中内低', '内低'];
+            
+            let index = 0;
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'zone-cell';
+                    
+                    const avg = data.battingAverage[row][col];
+                    const color = getColorForAverage(avg);
+                    cell.style.background = color;
+                    
+                    const rate = document.createElement('div');
+                    rate.className = 'rate';
+                    rate.textContent = avg.toFixed(3);
+                    rate.style.color = avg > 0.3 ? 'white' : '#333';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'label';
+                    label.textContent = zoneLabels[index];
+                    label.style.color = avg > 0.3 ? 'rgba(255,255,255,0.8)' : '#666';
+                    
+                    cell.appendChild(rate);
+                    cell.appendChild(label);
+                    
+                    cell.onclick = () => selectZone(index, zoneLabels[index]);
+                    
+                    container.appendChild(cell);
+                    index++;
+                }
+            }
+        }
+
+        function getColorForAverage(avg) {
+            if (avg >= 0.400) return '#ff4444';
+            if (avg >= 0.350) return '#ff6644';
+            if (avg >= 0.300) return '#ff8844';
+            if (avg >= 0.250) return '#ffaa44';
+            if (avg >= 0.200) return '#88ff44';
+            return '#44ff44';
+        }
+
+        function selectZone(zoneIndex, zoneName) {
+            selectedZone = zoneIndex;
+            document.getElementById('selectedPitchZone').textContent = 
+                `${selectedPitch} - ${zoneName}コース`;
+            goToStage(3);
+            renderBarChart();
+        }
+
+        // Stage 3: 球速別グラフ
+        function renderBarChart() {
+            const container = document.getElementById('barChart');
+            container.innerHTML = '';
+            
+            const pitchData = analysisData.data[selectedPitch];
+            if (!pitchData || !pitchData.velocityData || !pitchData.velocityData[selectedZone]) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+                return;
+            }
+            
+            const velocityData = pitchData.velocityData[selectedZone];
+            if (!velocityData.hits || velocityData.hits.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">打数データがありません</p>';
+                return;
+            }
+            
+            const maxHits = Math.max(...velocityData.hits);
+            
+            velocityData.speeds.forEach((speed, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bar-wrapper';
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                const height = maxHits > 0 ? (velocityData.hits[index] / maxHits) * 250 : 5;
+                bar.style.height = height + 'px';
+                
+                const value = document.createElement('div');
+                value.className = 'bar-value';
+                value.textContent = velocityData.hits[index] + '回';
+                bar.appendChild(value);
+                
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = speed + '\nkm/h';
+                label.style.whiteSpace = 'pre';
+                
+                wrapper.appendChild(bar);
+                wrapper.appendChild(label);
+                container.appendChild(wrapper);
+            });
+        }
+
+        // ステージ切り替え
+        function goToStage(stage) {
+            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+            document.getElementById('stage' + stage).classList.add('active');
+            currentStage = stage;
+        }
+
+        // 初期化実行
+        init();
+    </script>
+</body>
+</html>
