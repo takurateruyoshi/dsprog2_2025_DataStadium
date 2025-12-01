@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
             padding: 20px;
             display: flex;
@@ -24,71 +24,114 @@
         .container {
             background: white;
             border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 900px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1400px;
             width: 100%;
         }
 
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
+            margin-bottom: 20px;
+            font-size: 24px;
         }
 
-        .stage {
-            display: none;
-        }
-
-        .stage.active {
-            display: block;
-        }
-
-        /* Stage 1: 球種選択 */
-        .pitch-selector {
+        .main-layout {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
             margin-top: 20px;
         }
 
-        .pitch-button {
-            padding: 15px 10px;
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .selection-section h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        /* 投手選択 */
+        .hand-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .hand-button {
+            padding: 12px;
             border: 2px solid #667eea;
-            border-radius: 10px;
+            border-radius: 8px;
             background: white;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             color: #667eea;
         }
 
-        .pitch-button:hover {
+        .hand-button:hover, .hand-button.selected {
             background: #667eea;
             color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
-        /* Stage 2: ヒートマップ */
-        .heatmap-container {
+        /* 球種選択 */
+        .pitch-selector {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .pitch-button {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: left;
+        }
+
+        .pitch-button:hover, .pitch-button.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .right-panel {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
+            gap: 20px;
+        }
+
+        /* ヒートマップ */
+        .heatmap-container h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
 
         .zone-grid {
             display: grid;
-            grid-template-columns: repeat(5, 80px);
-            grid-template-rows: repeat(5, 80px);
-            gap: 2px;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 3px;
             background: #333;
-            padding: 2px;
-            border-radius: 10px;
-            margin: 20px 0;
+            padding: 3px;
+            border-radius: 12px;
+            aspect-ratio: 1;
+            max-width: 100%;
         }
 
         .zone-cell {
@@ -100,68 +143,82 @@
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
+            min-height: 80px;
         }
 
-        .zone-cell:hover {
+        .zone-cell:hover, .zone-cell.selected {
             transform: scale(1.05);
             z-index: 10;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 3px solid #667eea;
         }
 
         .zone-cell .rate {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
         }
 
         .zone-cell .label {
-            font-size: 10px;
+            font-size: 11px;
             color: #666;
             margin-top: 5px;
         }
 
         .legend {
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 20px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
+            font-size: 12px;
         }
 
         .legend-color {
-            width: 30px;
-            height: 20px;
-            border-radius: 4px;
+            width: 25px;
+            height: 15px;
+            border-radius: 3px;
         }
 
-        /* Stage 3: 球速別グラフ */
+        /* 球速別グラフ */
         .chart-container {
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         .chart-header {
-            text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .chart-header h3 {
             color: #333;
-            margin-bottom: 10px;
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .chart-header .zone-info {
+            color: #667eea;
+            font-size: 14px;
+            font-weight: bold;
         }
 
         .bar-chart {
             display: flex;
             align-items: flex-end;
             justify-content: space-around;
-            height: 300px;
+            height: 250px;
             border-left: 2px solid #333;
             border-bottom: 2px solid #333;
             padding: 20px;
             position: relative;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
 
         .bar-wrapper {
@@ -193,59 +250,84 @@
             transform: translateX(-50%);
             font-weight: bold;
             color: #333;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .bar-label {
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 8px;
+            font-size: 11px;
             color: #666;
             text-align: center;
         }
 
-        /* ナビゲーションボタン */
-        .nav-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
+        /* 見逃し・空振り円グラフ */
+        .pie-chart-container {
             margin-top: 30px;
         }
 
-        .nav-button {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+        .pie-chart-header {
+            margin-bottom: 15px;
+        }
+
+        .pie-chart-header h3 {
+            color: #333;
+            font-size: 18px;
             font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
-        .nav-button.primary {
-            background: #667eea;
-            color: white;
+        .pie-chart-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
 
-        .nav-button.primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        .pie-chart {
+            position: relative;
+            width: 200px;
+            height: 200px;
         }
 
-        .nav-button.secondary {
-            background: #e0e0e0;
+        .pie-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .pie-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pie-legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .pie-legend-label {
+            font-size: 14px;
             color: #333;
         }
 
-        .nav-button.secondary:hover {
-            background: #d0d0d0;
+        .pie-legend-value {
+            font-weight: bold;
+            color: #667eea;
+            margin-left: auto;
         }
 
         .current-selection {
             text-align: center;
             color: #666;
-            margin-bottom: 15px;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
         }
 
         .current-selection strong {
@@ -256,56 +338,71 @@
 <body>
     <div class="container">
         <h1>⚾ ストライクゾーン分析ツール</h1>
-
-        <!-- Stage 1: 球種選択 -->
-        <div id="stage1" class="stage active">
-            <h2 style="text-align: center; color: #666; margin-bottom: 20px;">分析する球種を選択してください</h2>
-            <div class="pitch-selector" id="pitchSelector"></div>
+        
+        <div class="current-selection" id="currentSelection">
+            投手: <strong id="selectedHand">未選択</strong> | 
+            球種: <strong id="selectedPitchDisplay">未選択</strong> | 
+            コース: <strong id="selectedZoneDisplay">未選択</strong>
         </div>
 
-        <!-- Stage 2: 被打率ヒートマップ -->
-        <div id="stage2" class="stage">
-            <div class="current-selection">
-                選択中の球種: <strong id="selectedPitch"></strong>
-            </div>
-            <div class="heatmap-container">
-                <h2 style="color: #666; margin-bottom: 10px;">コース別被打率</h2>
-                <div class="zone-grid" id="zoneGrid"></div>
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ff4444;"></div>
-                        <span>高被打率(0.400~)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ffaa44;"></div>
-                        <span>中被打率(0.250~0.399)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #44ff44;"></div>
-                        <span>低被打率(~0.249)</span>
-                    </div>
+        <div class="main-layout">
+            <!-- 左パネル: 選択UI -->
+            <div class="left-panel">
+                <!-- 投手選択 -->
+                <div>
+                    <h3>投手</h3>
+                    <div class="hand-selector" id="handSelector"></div>
                 </div>
-            </div>
-            <div class="nav-buttons">
-                <button class="nav-button secondary" onclick="goToStage(1)">← 戻る</button>
-            </div>
-        </div>
 
-        <!-- Stage 3: 球速別打数グラフ -->
-        <div id="stage3" class="stage">
-            <div class="current-selection">
-                選択中: <strong id="selectedPitchZone"></strong>
-            </div>
-            <div class="chart-container">
-                <div class="chart-header">
-                    <h2 style="color: #666;">球速別打数分布</h2>
-                    <p style="color: #999; font-size: 14px;">各球速帯で打たれた回数</p>
+                <!-- 球種選択 -->
+                <div>
+                    <h3>球種</h3>
+                    <div class="pitch-selector" id="pitchSelector"></div>
                 </div>
-                <div class="bar-chart" id="barChart"></div>
             </div>
-            <div class="nav-buttons">
-                <button class="nav-button secondary" onclick="goToStage(2)">← コース選択に戻る</button>
-                <button class="nav-button primary" onclick="goToStage(1)">球種選択に戻る</button>
+
+            <!-- 右パネル: データ表示 -->
+            <div class="right-panel">
+                <!-- ヒートマップ -->
+                <div>
+                    <h3>コース別被打率</h3>
+                    <div class="zone-grid" id="zoneGrid"></div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff4444;"></div>
+                            <span>高(0.400~)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ffaa44;"></div>
+                            <span>中(0.250~)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #44ff44;"></div>
+                            <span>低(~0.249)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 球速別グラフ -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>球速別打数分布</h3>
+                        <div class="zone-info" id="zoneInfo">コースを選択してください</div>
+                    </div>
+                    <div class="bar-chart" id="barChart">
+                        <p style="text-align: center; color: #999; margin: auto;">コースを選択すると球速別データが表示されます</p>
+                    </div>
+                </div>
+
+                <!-- 見逃し・空振り円グラフ -->
+                <div class="pie-chart-container">
+                    <div class="pie-chart-header">
+                        <h3>見逃し・空振り比率</h3>
+                    </div>
+                    <div class="pie-chart-content" id="pieChartContent">
+                        <p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り比率が表示されます</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -362,9 +459,16 @@
                     const velocityData = [];
                     for (let i = 0; i < 25; i++) {
                         const hits = speedRanges.map(() => Math.floor(Math.random() * 15) + 3);
+                        
+                        // 見逃し・空振り比率を生成
+                        const lookingRate = Math.random() * 0.6 + 0.2; // 20-80%
+                        const swingingRate = 1 - lookingRate;
+                        
                         velocityData.push({
                             speeds: speedRanges,
-                            hits: hits
+                            hits: hits,
+                            looking: Math.round(lookingRate * 100), // パーセント
+                            swinging: Math.round(swingingRate * 100)
                         });
                     }
                     
@@ -388,16 +492,48 @@
         // アプリケーションロジック
         // ============================================
 
-        let currentStage = 1;
+        let selectedHand = null;
         let selectedPitch = null;
         let selectedZone = null;
+        let selectedZoneName = '';
 
         // 初期化
         function init() {
+            renderHandSelector();
             renderPitchSelector();
+            renderHeatmap();
         }
 
-        // Stage 1: 球種選択UI
+        // 投手選択UI
+        function renderHandSelector() {
+            const container = document.getElementById('handSelector');
+            container.innerHTML = '';
+            
+            const hands = ['右投げ', '左投げ'];
+            hands.forEach(hand => {
+                const button = document.createElement('button');
+                button.className = 'hand-button';
+                button.textContent = hand;
+                button.onclick = () => selectHand(hand, button);
+                container.appendChild(button);
+            });
+        }
+
+        function selectHand(hand, buttonElement) {
+            selectedHand = hand;
+            document.getElementById('selectedHand').textContent = hand;
+            
+            // 選択状態を視覚化
+            document.querySelectorAll('.hand-button').forEach(btn => btn.classList.remove('selected'));
+            buttonElement.classList.add('selected');
+            
+            // ヒートマップを更新
+            if (selectedPitch) {
+                renderHeatmap();
+            }
+        }
+
+        // 球種選択UI
         function renderPitchSelector() {
             const container = document.getElementById('pitchSelector');
             container.innerHTML = '';
@@ -406,26 +542,41 @@
                 const button = document.createElement('button');
                 button.className = 'pitch-button';
                 button.textContent = pitch;
-                button.onclick = () => selectPitch(pitch);
+                button.onclick = () => selectPitch(pitch, button);
                 container.appendChild(button);
             });
         }
 
-        function selectPitch(pitch) {
+        function selectPitch(pitch, buttonElement) {
             selectedPitch = pitch;
-            document.getElementById('selectedPitch').textContent = pitch;
-            goToStage(2);
+            document.getElementById('selectedPitchDisplay').textContent = pitch;
+            
+            // 選択状態を視覚化
+            document.querySelectorAll('.pitch-button').forEach(btn => btn.classList.remove('selected'));
+            buttonElement.classList.add('selected');
+            
+            // ゾーン選択をリセット
+            selectedZone = null;
+            selectedZoneName = '';
+            document.getElementById('selectedZoneDisplay').textContent = '未選択';
+            
             renderHeatmap();
+            clearBarChart();
         }
 
-        // Stage 2: ヒートマップ
+        // ヒートマップ描画
         function renderHeatmap() {
             const container = document.getElementById('zoneGrid');
             container.innerHTML = '';
             
+            if (!selectedPitch) {
+                container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">球種を選択してください</p>';
+                return;
+            }
+            
             const data = analysisData.data[selectedPitch];
             if (!data || !data.battingAverage) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+                container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">データがありません</p>';
                 return;
             }
             
@@ -458,7 +609,9 @@
                     cell.appendChild(rate);
                     cell.appendChild(label);
                     
-                    cell.onclick = () => selectZone(index, zoneLabels[index]);
+                    const currentIndex = index;
+                    const currentLabel = zoneLabels[index];
+                    cell.onclick = () => selectZone(currentIndex, currentLabel, cell);
                     
                     container.appendChild(cell);
                     index++;
@@ -475,28 +628,39 @@
             return '#44ff44';
         }
 
-        function selectZone(zoneIndex, zoneName) {
+        function selectZone(zoneIndex, zoneName, cellElement) {
+            if (!selectedPitch) {
+                alert('先に球種を選択してください');
+                return;
+            }
+            
             selectedZone = zoneIndex;
-            document.getElementById('selectedPitchZone').textContent = 
-                `${selectedPitch} - ${zoneName}コース`;
-            goToStage(3);
+            selectedZoneName = zoneName;
+            document.getElementById('selectedZoneDisplay').textContent = zoneName;
+            document.getElementById('zoneInfo').textContent = `${selectedPitch} - ${zoneName}コース`;
+            
+            // 選択状態を視覚化
+            document.querySelectorAll('.zone-cell').forEach(cell => cell.classList.remove('selected'));
+            cellElement.classList.add('selected');
+            
             renderBarChart();
+            renderPieChart();
         }
 
-        // Stage 3: 球速別グラフ
+        // 球速別グラフ描画
         function renderBarChart() {
             const container = document.getElementById('barChart');
             container.innerHTML = '';
             
             const pitchData = analysisData.data[selectedPitch];
             if (!pitchData || !pitchData.velocityData || !pitchData.velocityData[selectedZone]) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
+                container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">データがありません</p>';
                 return;
             }
             
             const velocityData = pitchData.velocityData[selectedZone];
             if (!velocityData.hits || velocityData.hits.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">打数データがありません</p>';
+                container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">打数データがありません</p>';
                 return;
             }
             
@@ -508,7 +672,7 @@
                 
                 const bar = document.createElement('div');
                 bar.className = 'bar';
-                const height = maxHits > 0 ? (velocityData.hits[index] / maxHits) * 250 : 5;
+                const height = maxHits > 0 ? (velocityData.hits[index] / maxHits) * 200 : 5;
                 bar.style.height = height + 'px';
                 
                 const value = document.createElement('div');
@@ -527,11 +691,120 @@
             });
         }
 
-        // ステージ切り替え
-        function goToStage(stage) {
-            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
-            document.getElementById('stage' + stage).classList.add('active');
-            currentStage = stage;
+        function clearBarChart() {
+            const container = document.getElementById('barChart');
+            container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると球速別データが表示されます</p>';
+            document.getElementById('zoneInfo').textContent = 'コースを選択してください';
+            clearPieChart();
+        }
+
+        // 円グラフ描画
+        function renderPieChart() {
+            const container = document.getElementById('pieChartContent');
+            container.innerHTML = '';
+            
+            const pitchData = analysisData.data[selectedPitch];
+            if (!pitchData || !pitchData.velocityData || !pitchData.velocityData[selectedZone]) {
+                container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">データがありません</p>';
+                return;
+            }
+            
+            const zoneData = pitchData.velocityData[selectedZone];
+            const lookingPercent = zoneData.looking;
+            const swingingPercent = zoneData.swinging;
+            
+            // SVG円グラフを作成
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '200');
+            svg.setAttribute('height', '200');
+            svg.setAttribute('viewBox', '0 0 200 200');
+            svg.classList.add('pie-chart');
+            
+            // 円グラフの描画
+            const centerX = 100;
+            const centerY = 100;
+            const radius = 80;
+            
+            // 見逃しの扇形
+            const lookingAngle = (lookingPercent / 100) * 360;
+            const lookingPath = createPieSlice(centerX, centerY, radius, 0, lookingAngle);
+            lookingPath.setAttribute('fill', '#4CAF50');
+            lookingPath.setAttribute('stroke', 'white');
+            lookingPath.setAttribute('stroke-width', '2');
+            svg.appendChild(lookingPath);
+            
+            // 空振りの扇形
+            const swingingPath = createPieSlice(centerX, centerY, radius, lookingAngle, 360);
+            swingingPath.setAttribute('fill', '#FF9800');
+            swingingPath.setAttribute('stroke', 'white');
+            swingingPath.setAttribute('stroke-width', '2');
+            svg.appendChild(swingingPath);
+            
+            // 中心の白い円（ドーナツ型にする）
+            const innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            innerCircle.setAttribute('cx', centerX);
+            innerCircle.setAttribute('cy', centerY);
+            innerCircle.setAttribute('r', radius * 0.5);
+            innerCircle.setAttribute('fill', 'white');
+            svg.appendChild(innerCircle);
+            
+            // 凡例を作成
+            const legend = document.createElement('div');
+            legend.className = 'pie-legend';
+            
+            // 見逃し
+            const lookingItem = document.createElement('div');
+            lookingItem.className = 'pie-legend-item';
+            lookingItem.innerHTML = `
+                <div class="pie-legend-color" style="background: #4CAF50;"></div>
+                <span class="pie-legend-label">見逃し</span>
+                <span class="pie-legend-value">${lookingPercent}%</span>
+            `;
+            legend.appendChild(lookingItem);
+            
+            // 空振り
+            const swingingItem = document.createElement('div');
+            swingingItem.className = 'pie-legend-item';
+            swingingItem.innerHTML = `
+                <div class="pie-legend-color" style="background: #FF9800;"></div>
+                <span class="pie-legend-label">空振り</span>
+                <span class="pie-legend-value">${swingingPercent}%</span>
+            `;
+            legend.appendChild(swingingItem);
+            
+            container.appendChild(svg);
+            container.appendChild(legend);
+        }
+
+        // 円グラフの扇形を作成するヘルパー関数
+        function createPieSlice(cx, cy, r, startAngle, endAngle) {
+            const start = polarToCartesian(cx, cy, r, endAngle);
+            const end = polarToCartesian(cx, cy, r, startAngle);
+            const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+            
+            const d = [
+                'M', cx, cy,
+                'L', start.x, start.y,
+                'A', r, r, 0, largeArcFlag, 0, end.x, end.y,
+                'Z'
+            ].join(' ');
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            return path;
+        }
+
+        function polarToCartesian(cx, cy, r, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            return {
+                x: cx + (r * Math.cos(angleInRadians)),
+                y: cy + (r * Math.sin(angleInRadians))
+            };
+        }
+
+        function clearPieChart() {
+            const container = document.getElementById('pieChartContent');
+            container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り比率が表示されます</p>';
         }
 
         // 初期化実行
