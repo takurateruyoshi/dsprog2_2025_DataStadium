@@ -340,30 +340,31 @@
         <h1>⚾ ストライクゾーン分析ツール</h1>
         
         <div class="current-selection" id="currentSelection">
-            投手: <strong id="selectedHand">未選択</strong> | 
+            投手: <strong id="selectedPitcherDisplay">未選択</strong> | 
+            打者: <strong id="selectedBatterDisplay">未選択</strong> | 
             球種: <strong id="selectedPitchDisplay">未選択</strong> | 
             コース: <strong id="selectedZoneDisplay">未選択</strong>
         </div>
 
         <div class="main-layout">
-            <!-- 左パネル: 選択UI -->
             <div class="left-panel">
-                <!-- 投手選択 -->
                 <div>
                     <h3>投手</h3>
-                    <div class="hand-selector" id="handSelector"></div>
+                    <div class="hand-selector" id="pitcherHandSelector"></div>
                 </div>
 
-                <!-- 球種選択 -->
+                <div>
+                    <h3>打者</h3>
+                    <div class="hand-selector" id="batterHandSelector"></div>
+                </div>
+
                 <div>
                     <h3>球種</h3>
                     <div class="pitch-selector" id="pitchSelector"></div>
                 </div>
             </div>
 
-            <!-- 右パネル: データ表示 -->
             <div class="right-panel">
-                <!-- ヒートマップ -->
                 <div>
                     <h3>コース別被打率</h3>
                     <div class="zone-grid" id="zoneGrid"></div>
@@ -383,18 +384,16 @@
                     </div>
                 </div>
 
-                <!-- 球速別グラフ -->
                 <div class="chart-container">
                     <div class="chart-header">
                         <h3>球速別打数分布</h3>
-                        <div class="zone-info" id="zoneInfo">コースを選択してください</div>
+                        <div class="zone-info" id="zoneInfo">投打の組み合わせと球種を選択してください</div>
                     </div>
                     <div class="bar-chart" id="barChart">
                         <p style="text-align: center; color: #999; margin: auto;">コースを選択すると球速別データが表示されます</p>
                     </div>
                 </div>
 
-                <!-- 見逃し・空振り円グラフ -->
                 <div class="pie-chart-container">
                     <div class="pie-chart-header">
                         <h3>見逃し・空振り比率</h3>
@@ -409,104 +408,79 @@
 
     <script>
         // ============================================
-        // データ設定エリア - ここに分析結果を渡す
+        // データ設定エリア
         // ============================================
-        
         const analysisData = {
-            // 球種リスト
+            // JSONからデータが読み込まれるまでnull
+            data: null, 
+            
+            // 全ての球種リスト（JSONファイルの内容に合わせて必要に応じて調整）
             pitchTypes: [
-                'ストレート', 'スライダー', 'カーブ', 'フォーク', 'カットボール', 
-                'チェンジアップ', 'スプリット', 'ワンシーム', 'ツーシーム', '縦スライダー',
-                'シュート', 'ナックルカーブ', 'パワーカーブ', 'スローカーブ', 'シンカー',
-                'パーム', '高速スライダー', 'スクリュー', 'スラーブ', 'スローボール', 'ナックル'
-            ],
-            
-            // デフォルトデータ生成関数
-            generateDefaultData: function() {
-                const defaultData = {};
-                
-                this.pitchTypes.forEach(pitchType => {
-                    // 各球種のデフォルト被打率を生成（中心ほど高く、端ほど低い傾向）
-                    const battingAverage = [];
-                    for (let row = 0; row < 5; row++) {
-                        battingAverage[row] = [];
-                        for (let col = 0; col < 5; col++) {
-                            // 中心(2,2)からの距離で被打率を決定
-                            const centerDistance = Math.abs(row - 2) + Math.abs(col - 2);
-                            const baseRate = 0.400 - (centerDistance * 0.040);
-                            const randomVariation = (Math.random() - 0.5) * 0.050;
-                            battingAverage[row][col] = Math.max(0.100, Math.min(0.450, baseRate + randomVariation));
-                        }
-                    }
-                    
-                    // 球速帯を球種ごとに設定
-                    let speedRanges;
-                    if (['ストレート', 'ツーシーム', 'ワンシーム', 'カットボール'].includes(pitchType)) {
-                        speedRanges = ['130-139', '140-149', '150-159', '160+'];
-                    } else if (['高速スライダー', 'スプリット'].includes(pitchType)) {
-                        speedRanges = ['130-139', '140-149', '150-159'];
-                    } else if (['スライダー', 'シュート', '縦スライダー', 'シンカー'].includes(pitchType)) {
-                        speedRanges = ['120-129', '130-139', '140-149'];
-                    } else if (['フォーク', 'チェンジアップ', 'パーム'].includes(pitchType)) {
-                        speedRanges = ['120-129', '130-139', '140-149'];
-                    } else if (['スローカーブ', 'スローボール', 'ナックル'].includes(pitchType)) {
-                        speedRanges = ['90-99', '100-109', '110-119'];
-                    } else {
-                        speedRanges = ['100-109', '110-119', '120-129', '130-139'];
-                    }
-                    
-                    // 25ゾーンの球速別データを生成
-                    const velocityData = [];
-                    for (let i = 0; i < 25; i++) {
-                        const hits = speedRanges.map(() => Math.floor(Math.random() * 15) + 3);
-                        
-                        // 見逃し・空振り比率を生成
-                        const lookingRate = Math.random() * 0.6 + 0.2; // 20-80%
-                        const swingingRate = 1 - lookingRate;
-                        
-                        velocityData.push({
-                            speeds: speedRanges,
-                            hits: hits,
-                            looking: Math.round(lookingRate * 100), // パーセント
-                            swinging: Math.round(swingingRate * 100)
-                        });
-                    }
-                    
-                    defaultData[pitchType] = {
-                        battingAverage: battingAverage,
-                        velocityData: velocityData
-                    };
-                });
-                
-                return defaultData;
-            },
-            
-            // データを初期化
-            data: null
+                'ストレート', 'スライダー', 'フォーク', 'カットボール', 'シュート', 'チェンジアップ', 'カーブ', 'シンカー', '特殊球'
+            ]
         };
-        
-        // データを生成
-        analysisData.data = analysisData.generateDefaultData();
 
         // ============================================
-        // アプリケーションロジック
+        // アプリケーション状態
         // ============================================
-
-        let selectedHand = null;
+        let selectedPitcherHand = null;
+        let selectedBatterHand = null;
         let selectedPitch = null;
         let selectedZone = null;
         let selectedZoneName = '';
 
+        // ============================================
+        // ユーティリティ関数
+        // ============================================
+        // 選択されている投打の組み合わせキーを生成 (例: "右投げ_右打ち" -> "右_右")
+        function getCurrentDataKey() {
+            if (selectedPitcherHand && selectedBatterHand) {
+                // キーはPythonで生成されたJSONのキー (例: "右_左") に合わせる
+                const pitcherKey = selectedPitcherHand.includes('右') ? '右' : '左';
+                const batterKey = selectedBatterHand.includes('右') ? '右' : '左';
+                return `${pitcherKey}_${batterKey}`;
+            }
+            return null;
+        }
+
+        // 現在の選択に基づいて、選択された球種の分析データを取得
+        function getCurrentPitchData() {
+            const dataKey = getCurrentDataKey();
+            if (analysisData.data && dataKey && selectedPitch) {
+                const combinedData = analysisData.data[dataKey];
+                
+                // 💡 デバッグログ: 組み合わせの存在確認
+                if (!combinedData) {
+                    console.warn(`[DEBUG] 組み合わせキー '${dataKey}' のデータがJSONに存在しません。`);
+                }
+                
+                const pitchData = combinedData ? combinedData[selectedPitch] : null;
+
+                // 💡 デバッグログ: 球種データの存在確認
+                if (!pitchData) {
+                    console.warn(`[DEBUG] 組み合わせ '${dataKey}' に対する球種 '${selectedPitch}' のデータがJSONに存在しません。`);
+                }
+                
+                return pitchData;
+            }
+            return null;
+        }
+
+        // ============================================
+        // 初期化とUI操作ロジック
+        // ============================================
+
         // 初期化
         function init() {
-            renderHandSelector();
+            renderPitcherSelector();
+            renderBatterSelector();
             renderPitchSelector();
-            renderHeatmap();
+            renderHeatmap(); 
         }
 
         // 投手選択UI
-        function renderHandSelector() {
-            const container = document.getElementById('handSelector');
+        function renderPitcherSelector() {
+            const container = document.getElementById('pitcherHandSelector');
             container.innerHTML = '';
             
             const hands = ['右投げ', '左投げ'];
@@ -514,23 +488,48 @@
                 const button = document.createElement('button');
                 button.className = 'hand-button';
                 button.textContent = hand;
-                button.onclick = () => selectHand(hand, button);
+                button.onclick = () => selectPitcherHand(hand, button);
                 container.appendChild(button);
             });
         }
 
-        function selectHand(hand, buttonElement) {
-            selectedHand = hand;
-            document.getElementById('selectedHand').textContent = hand;
+        // 打者選択UI
+        function renderBatterSelector() {
+            const container = document.getElementById('batterHandSelector');
+            container.innerHTML = '';
             
-            // 選択状態を視覚化
-            document.querySelectorAll('.hand-button').forEach(btn => btn.classList.remove('selected'));
+            const hands = ['右打ち', '左打ち'];
+            hands.forEach(hand => {
+                const button = document.createElement('button');
+                button.className = 'hand-button';
+                button.textContent = hand;
+                button.onclick = () => selectBatterHand(hand, button);
+                container.appendChild(button);
+            });
+        }
+
+        // 投手選択処理
+        function selectPitcherHand(hand, buttonElement) {
+            selectedPitcherHand = hand;
+            document.getElementById('selectedPitcherDisplay').textContent = hand;
+            
+            document.querySelectorAll('#pitcherHandSelector .hand-button').forEach(btn => btn.classList.remove('selected'));
             buttonElement.classList.add('selected');
             
-            // ヒートマップを更新
-            if (selectedPitch) {
-                renderHeatmap();
-            }
+            renderHeatmap();
+            clearBarChart();
+        }
+
+        // 打者選択処理
+        function selectBatterHand(hand, buttonElement) {
+            selectedBatterHand = hand;
+            document.getElementById('selectedBatterDisplay').textContent = hand;
+            
+            document.querySelectorAll('#batterHandSelector .hand-button').forEach(btn => btn.classList.remove('selected'));
+            buttonElement.classList.add('selected');
+            
+            renderHeatmap();
+            clearBarChart();
         }
 
         // 球種選択UI
@@ -538,6 +537,8 @@
             const container = document.getElementById('pitchSelector');
             container.innerHTML = '';
             
+            // JSONデータから球種を取得できる場合は、analysisData.pitchTypesを上書きしても良い
+            // 現状はデフォルトのリストを使用
             analysisData.pitchTypes.forEach(pitch => {
                 const button = document.createElement('button');
                 button.className = 'pitch-button';
@@ -547,15 +548,14 @@
             });
         }
 
+        // 球種選択処理
         function selectPitch(pitch, buttonElement) {
             selectedPitch = pitch;
             document.getElementById('selectedPitchDisplay').textContent = pitch;
             
-            // 選択状態を視覚化
             document.querySelectorAll('.pitch-button').forEach(btn => btn.classList.remove('selected'));
             buttonElement.classList.add('selected');
             
-            // ゾーン選択をリセット
             selectedZone = null;
             selectedZoneName = '';
             document.getElementById('selectedZoneDisplay').textContent = '未選択';
@@ -564,27 +564,46 @@
             clearBarChart();
         }
 
-        // ヒートマップ描画
+        // ヒートマップ描画 (デバッグログを追加)
         function renderHeatmap() {
             const container = document.getElementById('zoneGrid');
             container.innerHTML = '';
             
+            const currentData = getCurrentPitchData(); // 内部でデバッグログが実行される
+            const dataKey = getCurrentDataKey();
+
+            if (!dataKey) {
+                container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">投手と打者を両方選択してください</p>';
+                document.getElementById('zoneInfo').textContent = '投打の組み合わせを選択してください';
+                clearBarChart();
+                return;
+            }
+            
             if (!selectedPitch) {
                 container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">球種を選択してください</p>';
+                document.getElementById('zoneInfo').textContent = '球種を選択してください';
+                clearBarChart();
                 return;
             }
             
-            const data = analysisData.data[selectedPitch];
-            if (!data || !data.battingAverage) {
-                container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">データがありません</p>';
+            if (!currentData || !currentData.battingAverage) {
+                // 💡 デバッグログ: データ欠損の最終確認
+                console.error(`[DEBUG] データが不足しています。キー: ${dataKey}, 球種: ${selectedPitch}`);
+                
+                container.innerHTML = '<p style="text-align: center; color: #999; grid-column: 1/-1;">選択された組み合わせのデータがありません</p>';
+                document.getElementById('zoneInfo').textContent = '選択された組み合わせのデータがありません';
+                clearBarChart();
                 return;
             }
             
+            const data = currentData;
+            
+            // 0から24のゾーンラベル（Python側と合わせる）
             const zoneLabels = ['高外', '高中外', '高中', '高中内', '高内',
                               '外', '中外', '真ん中', '中内', '内',
                               '低外', '低中外', '低中', '低中内', '低内',
                               '低外低', '低中外低', '低中低', '低中内低', '低内低',
-                              '外低', '中外低', '中低', '中内低', '内低'];
+                              '外低', '中外低', '中低', '中内低', '内低']; 
             
             let index = 0;
             for (let row = 0; row < 5; row++) {
@@ -613,6 +632,10 @@
                     const currentLabel = zoneLabels[index];
                     cell.onclick = () => selectZone(currentIndex, currentLabel, cell);
                     
+                    if (currentIndex === selectedZone) {
+                         cell.classList.add('selected');
+                    }
+                    
                     container.appendChild(cell);
                     index++;
                 }
@@ -629,17 +652,17 @@
         }
 
         function selectZone(zoneIndex, zoneName, cellElement) {
-            if (!selectedPitch) {
-                alert('先に球種を選択してください');
+            const dataKey = getCurrentDataKey();
+            if (!dataKey || !selectedPitch || !getCurrentPitchData()) {
+                alert('先に投打の組み合わせと球種を選択してください');
                 return;
             }
             
             selectedZone = zoneIndex;
             selectedZoneName = zoneName;
             document.getElementById('selectedZoneDisplay').textContent = zoneName;
-            document.getElementById('zoneInfo').textContent = `${selectedPitch} - ${zoneName}コース`;
+            document.getElementById('zoneInfo').textContent = `${selectedPitcherHand} vs ${selectedBatterHand} | ${selectedPitch} - ${zoneName}コース`;
             
-            // 選択状態を視覚化
             document.querySelectorAll('.zone-cell').forEach(cell => cell.classList.remove('selected'));
             cellElement.classList.add('selected');
             
@@ -652,14 +675,15 @@
             const container = document.getElementById('barChart');
             container.innerHTML = '';
             
-            const pitchData = analysisData.data[selectedPitch];
-            if (!pitchData || !pitchData.velocityData || !pitchData.velocityData[selectedZone]) {
-                container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">データがありません</p>';
+            const pitchData = getCurrentPitchData();
+
+            if (!pitchData || !pitchData.velocityData || selectedZone === null) {
+                clearBarChart();
                 return;
             }
             
             const velocityData = pitchData.velocityData[selectedZone];
-            if (!velocityData.hits || velocityData.hits.length === 0) {
+            if (!velocityData || !velocityData.hits || velocityData.hits.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">打数データがありません</p>';
                 return;
             }
@@ -694,7 +718,9 @@
         function clearBarChart() {
             const container = document.getElementById('barChart');
             container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると球速別データが表示されます</p>';
-            document.getElementById('zoneInfo').textContent = 'コースを選択してください';
+            document.getElementById('zoneInfo').textContent = (selectedPitcherHand && selectedBatterHand && selectedPitch) 
+                                                               ? `${selectedPitcherHand} vs ${selectedBatterHand} | ${selectedPitch} - コースを選択してください`
+                                                               : '投打の組み合わせと球種を選択してください';
             clearPieChart();
         }
 
@@ -703,13 +729,19 @@
             const container = document.getElementById('pieChartContent');
             container.innerHTML = '';
             
-            const pitchData = analysisData.data[selectedPitch];
-            if (!pitchData || !pitchData.velocityData || !pitchData.velocityData[selectedZone]) {
-                container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">データがありません</p>';
+            const pitchData = getCurrentPitchData();
+
+            if (!pitchData || !pitchData.velocityData || selectedZone === null) {
+                 clearPieChart();
                 return;
             }
             
             const zoneData = pitchData.velocityData[selectedZone];
+            if (!zoneData) {
+                clearPieChart();
+                return;
+            }
+            
             const lookingPercent = zoneData.looking;
             const swingingPercent = zoneData.swinging;
             
@@ -807,8 +839,40 @@
             container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り比率が表示されます</p>';
         }
 
-        // 初期化実行
-        init();
+        // ============================================
+        // データ読み込みと初期化の実行 (デバッグログを追加)
+        // ============================================
+        async function fetchDataAndInit() {
+            try {
+                // 🎯 JSONファイルのパスをここで指定します。
+                const jsonPath = 'analysis_data.json';
+                console.log(`[DEBUG] JSONファイルの読み込みを開始: ${jsonPath}`); 
+                
+                const response = await fetch(jsonPath); 
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} (ファイルパスまたはファイル名の誤りを確認してください)`);
+                }
+                
+                const jsonData = await response.json();
+                analysisData.data = jsonData;
+
+                console.log('[DEBUG] JSONデータの読み込みに成功しました。'); 
+                console.log('[DEBUG] 読み込まれたデータ構造のトップレベルキー:', Object.keys(jsonData));
+                
+                // データの読み込みが完了したら初期化を実行
+                init();
+                
+            } catch (error) {
+                console.error('🚨 [DEBUG] データの読み込みに失敗しました:', error); 
+                const container = document.getElementById('zoneGrid');
+                container.innerHTML = '<p style="text-align: center; color: red; grid-column: 1/-1;">分析データの読み込みに失敗しました。analysis_data.jsonファイルを確認してください。</p>';
+                init(); 
+            }
+        }
+
+        // ページロード時にデータ読み込みと初期化を開始
+        fetchDataAndInit();
     </script>
 </body>
 </html>
