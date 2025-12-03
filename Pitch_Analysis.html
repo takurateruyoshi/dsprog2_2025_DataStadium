@@ -260,7 +260,7 @@
             text-align: center;
         }
 
-        /* 見逃し・空振り円グラフ */
+        /* 見逃し・空振り・ファウル・コンタクト円グラフ */
         .pie-chart-container {
             margin-top: 30px;
         }
@@ -396,10 +396,11 @@
 
                 <div class="pie-chart-container">
                     <div class="pie-chart-header">
-                        <h3>見逃し・空振り比率</h3>
+                        <h3>見逃し・空振り・ファウル・コンタクト比率</h3>
                     </div>
                     <div class="pie-chart-content" id="pieChartContent">
-                        <p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り比率が表示されます</p>
+                        <p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り・ファウル・コンタクト
+                            比率が表示されます</p>
                     </div>
                 </div>
             </div>
@@ -742,8 +743,10 @@
                 return;
             }
             
-            const lookingPercent = zoneData.looking;
+            const calledPercent = zoneData.called;
             const swingingPercent = zoneData.swinging;
+            const foulPercent = zoneData.foul;
+            const contactPercent = zoneData.contact;
             
             // SVG円グラフを作成
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -756,17 +759,39 @@
             const centerX = 100;
             const centerY = 100;
             const radius = 80;
+            let currentAngle = 0;
             
-            // 見逃しの扇形
-            const lookingAngle = (lookingPercent / 100) * 360;
-            const lookingPath = createPieSlice(centerX, centerY, radius, 0, lookingAngle);
-            lookingPath.setAttribute('fill', '#4CAF50');
-            lookingPath.setAttribute('stroke', 'white');
-            lookingPath.setAttribute('stroke-width', '2');
-            svg.appendChild(lookingPath);
+            // 見逃しの扇形 (#4CAF50)
+            const calledAngle = (calledPercent / 100) * 360;
+            const calledPath = createPieSlice(centerX, centerY, radius, currentAngle, currentAngle + calledAngle);
+            calledPath.setAttribute('fill', '#4CAF50');
+            calledPath.setAttribute('stroke', 'white');
+            calledPath.setAttribute('stroke-width', '2');
+            svg.appendChild(calledPath);
+            currentAngle += calledAngle;
             
-            // 空振りの扇形
-            const swingingPath = createPieSlice(centerX, centerY, radius, lookingAngle, 360);
+            // ファウルの扇形 (#2196F3)
+            const foulAngle = (foulPercent / 100) * 360;
+            const foulPath = createPieSlice(centerX, centerY, radius, currentAngle, currentAngle + foulAngle);
+            foulPath.setAttribute('fill', '#2196F3');
+            foulPath.setAttribute('stroke', 'white');
+            foulPath.setAttribute('stroke-width', '2');
+            svg.appendChild(foulPath);
+            currentAngle += foulAngle;
+
+            //コンタクトの扇形 (#9C27B0)
+            const contactAngle = (contactPercent / 100) * 360;
+            const contactPath = createPieSlice(centerX, centerY, radius, currentAngle, currentAngle + contactAngle);
+            contactPath.setAttribute('fill', '#9C27B0');
+            contactPath.setAttribute('stroke', 'white');
+            contactPath.setAttribute('stroke-width', '2');
+            svg.appendChild(contactPath);
+            currentAngle += contactAngle;
+            
+            // 空振りの扇形 (#FF9800)
+            // 合計が360度になるように、残りの角度を使用
+            const swingingAngle = 360 - currentAngle; 
+            const swingingPath = createPieSlice(centerX, centerY, radius, currentAngle, currentAngle + swingingAngle);
             swingingPath.setAttribute('fill', '#FF9800');
             swingingPath.setAttribute('stroke', 'white');
             swingingPath.setAttribute('stroke-width', '2');
@@ -784,17 +809,36 @@
             const legend = document.createElement('div');
             legend.className = 'pie-legend';
             
-            // 見逃し
-            const lookingItem = document.createElement('div');
-            lookingItem.className = 'pie-legend-item';
-            lookingItem.innerHTML = `
+            // 1. 見逃し (called)
+            const calledItem = document.createElement('div');
+            calledItem.className = 'pie-legend-item';
+            calledItem.innerHTML = `
                 <div class="pie-legend-color" style="background: #4CAF50;"></div>
                 <span class="pie-legend-label">見逃し</span>
-                <span class="pie-legend-value">${lookingPercent}%</span>
-            `;
-            legend.appendChild(lookingItem);
+                <span class="pie-legend-value">${calledPercent}%</span>  `;
+            legend.appendChild(calledItem);
             
-            // 空振り
+            // 2. ファウル (foul)
+            const foulItem = document.createElement('div');
+            foulItem.className = 'pie-legend-item';
+            foulItem.innerHTML = `
+                <div class="pie-legend-color" style="background: #2196F3;"></div>
+                <span class="pie-legend-label">ファウル</span>
+                <span class="pie-legend-value">${foulPercent}%</span>
+            `;
+            legend.appendChild(foulItem);
+            
+            // 3. コンタクト (contact)
+            const contactItem = document.createElement('div');
+            contactItem.className = 'pie-legend-item';
+            contactItem.innerHTML = `
+                <div class="pie-legend-color" style="background: #9C27B0;"></div>
+                <span class="pie-legend-label">コンタクト</span>
+                <span class="pie-legend-value">${contactPercent}%</span>
+            `;
+            legend.appendChild(contactItem);
+
+            // 4. 空振り (swinging)
             const swingingItem = document.createElement('div');
             swingingItem.className = 'pie-legend-item';
             swingingItem.innerHTML = `
@@ -810,15 +854,18 @@
 
         // 円グラフの扇形を作成するヘルパー関数
         function createPieSlice(cx, cy, r, startAngle, endAngle) {
-            const start = polarToCartesian(cx, cy, r, endAngle);
-            const end = polarToCartesian(cx, cy, r, startAngle);
+            // SVGの座標系に合わせて角度を調整
+            const start = polarToCartesian(cx, cy, r, startAngle);
+            const end = polarToCartesian(cx, cy, r, endAngle);
+            
+            // 180度を超えていれば largeArcFlag は 1
             const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
             
             const d = [
-                'M', cx, cy,
-                'L', start.x, start.y,
-                'A', r, r, 0, largeArcFlag, 0, end.x, end.y,
-                'Z'
+                'M', cx, cy, // 中心から開始
+                'L', start.x, start.y, // 開始点へ線
+                'A', r, r, 0, largeArcFlag, 1, end.x, end.y, // 弧を描く (フラグを1に修正)
+                'Z' // 中心に戻って閉じる
             ].join(' ');
             
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -827,6 +874,7 @@
         }
 
         function polarToCartesian(cx, cy, r, angleInDegrees) {
+            // 角度をラジアンに変換し、90度オフセット（0度が上になるように）
             const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
             return {
                 x: cx + (r * Math.cos(angleInRadians)),
@@ -836,7 +884,7 @@
 
         function clearPieChart() {
             const container = document.getElementById('pieChartContent');
-            container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り比率が表示されます</p>';
+            container.innerHTML = '<p style="text-align: center; color: #999; margin: auto;">コースを選択すると見逃し・空振り・ファウル・コンタクト比率が表示されます</p>';
         }
 
         // ============================================
